@@ -1,0 +1,45 @@
+{
+  "name": "kinect-gestures",
+  "version": "0.2.2",
+  "description": "Kinect Gestures detection for use with node-openni.",
+  "homepage": "",
+  "repository": "joellord/node-kinect",
+  "author": {
+    "name": "Joel Lord",
+    "email": "joelphy@gmail.com",
+    "url": "http://www.github.com/joellord"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "keywords": [
+    "kinect",
+    "gestures",
+    "node"
+  ],
+  "devDependencies": {
+    "gulp": "^3.6.0",
+    "gulp-exclude-gitignore": "^1.0.0",
+    "gulp-istanbul": "^0.9.0",
+    "gulp-jscs": "^1.1.0",
+    "gulp-jshint": "^1.5.3",
+    "gulp-mocha": "^2.0.0",
+    "gulp-plumber": "^1.0.0",
+    "gulp-nsp": "^0.4.5",
+    "jshint-stylish": "^1.0.0",
+    "gulp-coveralls": "^0.1.0",
+    "gulp-babel": "^5.1.0",
+    "babel-core": "^5.5.0",
+    "chai": "*",
+    "request": "*"
+  },
+  "dependencies": {
+    "openni": "*"
+  },
+  "scripts": {
+    "prepublish": "gulp prepublish",
+    "test": "gulp"
+  },
+  "license": "MIT"
+}
