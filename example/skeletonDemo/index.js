@@ -1,7 +1,7 @@
 //Require the OpenNI library
-var kinect = require("openni")();
+var kinect = require("./openni")();
 //Require the Kinect Gestures library
-var tracker = require("kinect-gestures")(kinect, {delayBetweenGestures: 1000});
+var tracker = require("../../dist")(kinect, {delayBetweenGestures: 1000});
 //Require the an express server
 var app = require("express")();
 //Require the HTTP lib to server the index page
