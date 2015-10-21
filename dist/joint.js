@@ -1,12 +1,14 @@
+"use strict";
+
 var Coordinates = require("./coordinates.js");
 
 /**
 * A joint is only a Coordinate with a label
 **/
-var Joint = function(label) {
+var Joint = function Joint(label) {
 	Coordinates.apply(this);
 	this.label = label;
-}
+};
 
 //Inherit the Coordinate prototype and override the constructor
 Joint.prototype = Coordinates.prototype;

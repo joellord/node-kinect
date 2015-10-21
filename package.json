@@ -1,6 +1,6 @@
 {
   "name": "kinect-gestures",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Kinect Gestures detection for use with node-openni.",
   "homepage": "",
   "repository": "joellord/node-kinect",

@@ -2,6 +2,8 @@
 * Gesture recognition
 **/
 
+"use strict";
+
 var Skeleton = require("./skeleton.js");
 var util = require("util");
 var EventEmitter = require("events").EventEmitter;
@@ -16,13 +18,13 @@ var registeredGestures = [];
 * Initialize the kinect and start the tracking
 * @param _kinectContext The Kinect
 **/
-var GestureRecognition = function(_kinectContext, options) {
+var GestureRecognition = function GestureRecognition(_kinectContext, options) {
   kinectContext = _kinectContext;
   if (options) {
     delayBetweenGestures = options.delayBetweenGestures || 500;
   }
   this.startTracking();
-}
+};
 
 //Add the event emitter
 util.inherits(GestureRecognition, EventEmitter);
@@ -32,19 +34,19 @@ util.inherits(GestureRecognition, EventEmitter);
 * Returns the user skeleton
 * @return Skeleton The user skeleton
 **/
-GestureRecognition.prototype.getUserSkeleton = function() {
+GestureRecognition.prototype.getUserSkeleton = function () {
   return user;
-}
+};
 
 /**
 * GestureRecognition.startTracking
 * Start tracking the kinect events
 * Emits a skeletonChanged event when a joint event was triggered
 **/
-GestureRecognition.prototype.startTracking = function() {
+GestureRecognition.prototype.startTracking = function () {
   var self = this;
 
-  kinectContext.emit = function() {
+  kinectContext.emit = function () {
     //Arguments:
     // 0: event name
     // 1: userId
@@ -55,8 +57,8 @@ GestureRecognition.prototype.startTracking = function() {
       user.jointChanged(arguments["0"], arguments["2"], arguments["3"], arguments["4"]);
       self.emit("skeletonChanged", user);
     }
-  }
-}
+  };
+};
 
 /**
 * GestureRecognition.registerGesture
@@ -65,33 +67,35 @@ GestureRecognition.prototype.startTracking = function() {
 * it and start the gesture detection.  It will also trigger a gesture:gestureName
 * event when the gesture is detected.
 **/
-GestureRecognition.prototype.registerGesture = function(gestureName) {
+GestureRecognition.prototype.registerGesture = function (gestureName) {
   var self = this;
   var id = registeredGestures.length;
   var G = require("./gestures/" + gestureName);
   registeredGestures.push(new G(user));
   //Define a name in case it wasn't done in the gesture lib
   var props = registeredGestures[id].getGestureProperties();
-  if (props === undefined) {props = {};}
+  if (props === undefined) {
+    props = {};
+  }
   if (props.name === undefined) {
-    props.name = "gesture" + (registeredGestures.length-1);
-    registeredGestures[id].getGestureProperties = function() {
+    props.name = "gesture" + (registeredGestures.length - 1);
+    registeredGestures[id].getGestureProperties = function () {
       return props;
-    }
+    };
   }
   console.log("Register Gesture " + gestureName);
   //Start the gesture detection
   registeredGestures[id].startDetection();
   //When a gesture is detected, pause all gesture detection for
   // delayBetweenGestures ms and emit a gesture:gestureName event
-  registeredGestures[id].on("gesture:"+gestureName, function() {
-    for (var i=0; i<registeredGestures.length; i++) {
+  registeredGestures[id].on("gesture:" + gestureName, function () {
+    for (var i = 0; i < registeredGestures.length; i++) {
       registeredGestures[i].pauseDetection(delayBetweenGestures);
     }
-    self.emit("gesture:"+gestureName);
+    self.emit("gesture:" + gestureName);
   });
-}
+};
 
-module.exports = function(kc) {
+module.exports = function (kc) {
   return new GestureRecognition(kc);
-}
+};
