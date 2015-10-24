@@ -1,0 +1,253 @@
+<html>
+<head>
+</head>
+
+<style>
+	body {position: absolute;}
+	.joint {position: absolute;}
+	.line {padding:0px; margin:0px; background-color: #000000; line-height:1px; position:absolute;}
+	.bodypic {position:absolute; left: -30px; top: -30px; z-index:100;}
+	#skeleton {position: relative; width: 600px; height: 600px;}
+</style>
+<body>
+<div id="skeleton"></div>
+<div>
+	<!-- options -->
+	<label for="showLines">Show Lines</label>
+	<input type="checkbox" id="showLines" checked="checked"/>
+	<label for="showLabels">Show Labels</label>
+	<input type="checkbox" id="showLabels" />
+	<label for="showGestures">Show Gestures</label>
+	<input type="checkbox" id="showGestures" checked="checked" />
+	<label for="showHead">Show Head</label>
+	<input type="checkbox" id="showHead" checked="checked"/>
+</div>
+</body>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script type="text/javascript">
+//Arbitratry values for min and max of the axis
+var axisProps = [
+        {name: "x", min: -1500, max: 1500},
+        {name: "y", min: -1000, max: 1000},
+        {name: "z", min: -2000, max: 2000}
+      ];
+
+var maxFontSize = 30;
+
+var options = {
+	showLines: true,
+	showLabels: false,
+	showGestures: true,
+	showHead: false
+};
+
+/**
+ * This functions takes a skeleton and draws a <span> for
+ * every joint of the skeleton
+ * @param Skeleton skeleton
+ */
+function drawJoints(skeleton) {
+	var divWidth = $("#skeleton").width();
+	var divHeight = $("#skeleton").height();
+
+	for (var pointToTrack in skeleton) {
+		//Create the joint if it doesn't exist yet
+		if ($("#" + skeleton[pointToTrack].label).length === 0) {
+			var textAttr = options.showLabels ? skeleton[pointToTrack].label : "X";
+			$("<span>").addClass("joint").attr("id", skeleton[pointToTrack].label).text(textAttr).appendTo($("#skeleton"));
+			if (skeleton[pointToTrack].label === "head" && options.showHead) {
+				showHead();
+			}
+		}
+
+		//For each axis, get the coordinates and change the CSS
+		for (var j = 0; j < axisProps.length; j++) {
+			var axis = axisProps[j];
+			if (skeleton[pointToTrack][axis.name] < axis.min) skeleton[pointToTrack][axis.name] = axis.min;
+			if (skeleton[pointToTrack][axis.name] > axis.max) skeleton[pointToTrack][axis.name] = axis.max;
+			var axisLength = parseInt((-1*axis.min) + axis.max);
+			var pointRelToZero = parseInt(skeleton[pointToTrack][axis.name] - axis.min);
+			var pointPerc = pointRelToZero/axisLength;
+			var pointProperty;
+			switch (axis.name) {
+				case "x": 
+					pointProperty = pointPerc * divWidth;
+					$("#" + skeleton[pointToTrack].label).css("left", pointProperty + "px");
+					// if (c.DEBUG) console.log (skeleton[pointToTrack].joint + " x: " + pointProperty);
+					break;
+				case "y":
+					pointProperty = pointPerc * divHeight;
+					$("#" + skeleton[pointToTrack].label).css("top", divHeight - pointProperty + "px");
+					// if (c.DEBUG) console.log (skeleton[pointToTrack].joint + " y: " + pointProperty);
+					break;
+				case "z": 
+					pointProperty = pointPerc * maxFontSize;
+					$("#" + skeleton[pointToTrack].label).css("font-size", pointProperty + "px");
+					// if (c.DEBUG) console.log (skeleton[pointToTrack].joint + " z: " + pointProperty);
+					break;
+			}
+		}
+	}
+}
+
+//Describes how the joints should be connected
+var connectedJoints = [
+    ["head", "neck"],
+    ["neck", "right_shoulder"],
+    ["neck", "left_shoulder"],
+    ["left_shoulder", "left_elbow"],
+    ["right_shoulder", "right_elbow"],
+    ["left_elbow", "left_hand"],
+    ["right_elbow", "right_hand"],
+    ["neck", "torso"],
+    ["torso", "left_hip"],
+    ["torso", "right_hip"],
+    ["left_hip", "left_knee"],
+    ["right_hip", "right_knee"],
+    ["left_knee", "left_foot"],
+    ["right_knee", "right_foot"]
+];
+
+/**
+ * This function calls the draw line for every
+ * connected joint
+ */
+function drawConnections() {
+	for (var i = 0; i < connectedJoints.length; i++) {
+		drawLine(connectedJoints[i][0], connectedJoints[i][1]);
+	}
+}
+
+/**
+ * Draws a line (a height=1 div) between all the joints
+ * in the connectedJoints array
+ */
+function drawLine(joint1, joint2) {
+	var elem1 = $("#" + joint1);
+	var elem2 = $("#" + joint2);
+
+	//Get the middle of the first element
+	var start = getMiddle(elem1);
+	var end = getMiddle(elem2);
+
+	//Get the distance
+	var distance = Math.sqrt((end.x-start.x)*(end.x-start.x) + (end.y-start.y)*(end.y-start.y));
+
+	//Angle 
+	var angle = Math.atan2((start.y-end.y),(start.x-end.x)) * (180/Math.PI);
+	angle+=180;
+
+	//Line Center
+	var lc = {
+		x: ((start.x + end.x) /2) - (distance /2),
+		y: (start.y + end.y) /2
+	}
+
+	//Show the line
+	var lineEl = $("#" + joint1 + "-" + joint2).length ? $("#" + joint1 + "-" + joint2) : $("<div />").attr("id", joint1 + "-" + joint2).addClass("line").appendTo("#skeleton");
+	lineEl
+		.css("height", "1px")
+		.css("left", lc.x + "px")
+		.css("top", lc.y + "px")
+		.css("width", distance + "px")
+		.css("-moz-transform", "rotate(" + angle + "deg)")
+		.css("-webkit-transform", "rotate(" + angle + "deg)")
+		.css("-o-transform", "rotate(" + angle + "deg)")
+		.css("transform", "rotate(" + angle + "deg)");
+}
+
+/**
+ * Returns the x,y coordinates of the center
+ * of an element
+ */
+function getMiddle(el) {
+	return {
+		x: parseInt($(el).css("left")) + ($(el).width()/2),
+		y: parseInt($(el).css("top")) + ($(el).height()/2)
+	}
+}
+
+/**
+ * Changes the colors of an element
+ * @param el Name of the element
+ * @param color The hex code of the color
+ */
+function colorize(el, color) {
+	var $el = $(el);
+	if(color.substr(0,1) !== "#") color = "#" + color;
+	$el.css("color", color);
+}
+
+/**
+ * Displays a random image from randomuser.me as a head
+ * for the skeleton
+ */
+function showHead() {
+	//Get a random head
+	$.ajax({
+		type: "GET",
+		url: "http://api.randomuser.me/",
+		dataType: "json",
+		success: function(resp) {
+			$("<img/>").addClass("bodypic").attr("src", resp.results[0].user.picture.thumbnail).appendTo("#head");
+		}
+	});
+}
+
+var socket = io();
+socket.on("skeleton", function(skeleton) {
+	drawJoints(skeleton);
+	if (options.showLines) drawConnections();
+});
+
+socket.on("rightHandSwipeLeft", function() {
+	if (!options.showGestures) return;
+	colorize("#right_hand", "#00FF00");
+	setTimeout(function() {colorize("#right_hand", "#000000")}, 500);
+});
+socket.on("rightHandSwipeRight", function() {
+	if (!options.showGestures) return;
+	colorize("#right_hand", "#FF0000");
+	setTimeout(function() {colorize("#right_hand", "#000000")}, 500);
+});
+socket.on("leftHandSwipeLeft", function() {
+	if (!options.showGestures) return;
+	colorize("#left_hand", "#00FF00");
+	setTimeout(function() {colorize("#left_hand", "#000000")}, 500);
+});
+socket.on("leftHandSwipeRight", function() {
+	if (!options.showGestures) return;
+	colorize("#left_hand", "#FF0000");
+	setTimeout(function() {colorize("#left_hand", "#000000")}, 500);
+});
+
+/**
+* Options
+**/
+$("#showLines").on("change", function() {
+	options.showLines = this.checked;
+});
+
+$("#showGestures").on("change", function() {
+	options.showGestures = this.checked;
+});
+
+$("#showLabels").on("change", function() {
+	options.showLabels = this.checked;
+});
+
+$("#showHead").on("change", function() {
+	if (this.checked) {
+		showHead();
+	} else {
+		$("#head").find("img").remove();
+	}
+	options.showHead = this.checked;
+});
+
+</script>
+
+
+</html>
