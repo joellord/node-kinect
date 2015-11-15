@@ -21,7 +21,7 @@ var c = {
 	SERVER_PORT: 3000,
 	READY: true,
 	STANDBY: false,
-	MOTOR_SPEED: 100,
+	MOTOR_SPEED: 200,
 	MOTOR_DELAY: 1000
 };
 var states = {
@@ -65,10 +65,8 @@ board.on("ready", function() {
     robot.greenLed = new five.Led(30);
     robot.yellowLed = new five.Led(28);
 
-    robot.greenLed.blink(500);
-    setTimeout(function() {
-        robot.yellowLed.blink(500);
-    }, 250)
+    blinkLeds();
+
     robot.piezo = new five.Piezo(32);
 
     states.board = c.READY;
@@ -82,6 +80,23 @@ function moveRobot(direction) {
         robot.lmotor.stop();
         robot.rmotor.stop();
     }, c.MOTOR_DELAY);
+}
+
+function blinkLeds() {
+    if (states.board !== c.READY) return;
+    robot.greenLed.blink(500);
+    setTimeout(function() {
+        robot.yellowLed.blink(500);
+    }, 250);
+}
+
+function quickFlash() {
+    robot.greenLed.off();
+    robot.yellowLed.blink(100);
+    setTimeout(function() {
+        robot.yellowLed.off();
+        blinkLeds();
+    }, 3000);
 }
 
 /**
@@ -102,7 +117,7 @@ tracker.on("gesture:rightHandSwipeRight", function() {
 });
 tracker.on("gesture:leftHandSwipeLeft", function() {
 	io.emit("leftHandSwipeLeft");
-	if (states.board === c.READY) robot.greenLed.toggle();
+	if (states.board === c.READY) quickFlash();
 });
 tracker.on("gesture:leftHandSwipeRight", function() {
 	io.emit("leftHandSwipeRight");
